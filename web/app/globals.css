@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Trident Island — waterfront palette.
+
+   Built around the colours of the river at dusk: deep navy water, the teal of a
+   lit channel marker, and the brass of chart instruments. Everything is OKLCH so
+   the steps between shades stay perceptually even.
+   ─────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Water — darkest to lightest */
+  --color-abyss: oklch(0.145 0.032 250);
+  --color-deep: oklch(0.185 0.036 250);
+  --color-hull: oklch(0.235 0.038 249);
+  --color-shoal: oklch(0.315 0.036 247);
+
+  /* Type */
+  --color-foam: oklch(0.972 0.008 240);
+  --color-mist: oklch(0.755 0.021 242);
+  --color-fathom: oklch(0.605 0.024 245);
+
+  /* Accents */
+  --color-beacon: oklch(0.815 0.132 196);
+  --color-beacon-deep: oklch(0.62 0.115 202);
+  --color-brass: oklch(0.815 0.108 78);
+
+  /* Status — the border-wait scale, also used for trends and alerts */
+  --color-calm: oklch(0.775 0.155 158);
+  --color-caution: oklch(0.855 0.145 92);
+  --color-heavy: oklch(0.735 0.165 55);
+  --color-severe: oklch(0.665 0.205 24);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "SF Pro Display", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --radius-card: 1.25rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  /* Keeps the fixed background from banding on iOS overscroll. */
+  background-color: var(--color-abyss);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  color: var(--color-foam);
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+  background-color: var(--color-abyss);
+  /* Three washes of light over the water: a beacon glow at top-left, a colder
+     one at top-right, and the deep channel fading in below. */
+  background-image:
+    radial-gradient(
+      120% 80% at 12% -8%,
+      color-mix(in oklch, var(--color-beacon) 16%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 60% at 92% 2%,
+      color-mix(in oklch, var(--color-beacon-deep) 20%, transparent) 0%,
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--color-deep) 0%, var(--color-abyss) 42%, var(--color-abyss) 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Faint depth contours, the way a nautical chart shades a channel. Decorative
+   only, and quiet enough that it reads as texture rather than pattern. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(
+      -24deg,
+      transparent 0 78px,
+      color-mix(in oklch, var(--color-beacon) 5%, transparent) 78px 79px,
+      transparent 79px 164px
+    );
+  mask-image: radial-gradient(130% 90% at 50% 0%, black 0%, transparent 72%);
+}
+
+@layer components {
+  /* The glass panel every card is built from: a lit top edge, a soft body, and
+     enough blur to let the background gradients through. */
+  .card {
+    position: relative;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in oklch, var(--color-foam) 9%, transparent);
+    background:
+      linear-gradient(
+        168deg,
+        color-mix(in oklch, var(--color-foam) 8%, transparent) 0%,
+        color-mix(in oklch, var(--color-foam) 3%, transparent) 32%,
+        color-mix(in oklch, var(--color-abyss) 45%, transparent) 100%
+      );
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, var(--color-foam) 10%, transparent) inset,
+      0 18px 40px -24px oklch(0.08 0.03 250 / 0.9);
+    overflow: hidden;
+  }
+
+  /* Section eyebrow: small, wide-tracked, quiet. Used on every card header. */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-fathom);
+  }
+
+  /* Any number meant to be read at a glance from across the boat. */
+  .readout {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em;
+    line-height: 0.92;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Skeletons while the first payload lands. */
+@keyframes trident-shimmer {
+  0% { opacity: 0.45; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.45; }
+}
+
+.shimmer {
+  animation: trident-shimmer 1.9s ease-in-out infinite;
+}
+
+/* A slow drift for the wind arrow so it reads as live rather than static. */
+@keyframes trident-sway {
+  0%, 100% { transform: rotate(-1.6deg); }
+  50% { transform: rotate(1.6deg); }
+}
+
+.sway {
+  animation: trident-sway 5.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer,
+  .sway {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Recharts paints an SVG focus ring on tooltip hover; we style our own. */
+.recharts-wrapper :focus {
+  outline: none;
+}
