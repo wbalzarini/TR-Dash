@@ -124,6 +124,17 @@ Upstream responses are cached in-process — 10 minutes for weather and border, 
 for the river level, 30 for water temperature — so the external APIs aren't
 hammered.
 
+## Credits
+
+The trident mark is the Unicode trident emblem from
+[Noto Emoji](https://github.com/googlefonts/noto-emoji) by Google, used under the
+[Apache License 2.0](https://github.com/googlefonts/noto-emoji/blob/main/svg/LICENSE).
+Its paths are inlined in `web/components/ui/TridentMark.tsx`, so the app carries
+no icon dependency at runtime.
+
+The wordmark is set in [Cinzel](https://fonts.google.com/specimen/Cinzel), served
+self-hosted by `next/font`.
+
 ## Layout
 
 ```

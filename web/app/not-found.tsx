@@ -4,7 +4,7 @@ import { TridentMark } from "@/components/ui/TridentMark";
 export default function NotFound() {
   return (
     <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-lg flex-col items-center justify-center px-6 text-center">
-      <TridentMark className="h-12 text-beacon" />
+      <TridentMark className="h-12" />
       <h1 className="mt-5 text-2xl font-semibold tracking-[0.16em] uppercase">
         Off the chart
       </h1>

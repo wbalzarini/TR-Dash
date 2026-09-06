@@ -48,7 +48,7 @@ export function DashboardHeader({
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           {/* The mark carries the name, so it isn't decorative here. */}
           <TridentMark
-            className="mt-0.5 h-11 shrink-0 text-beacon sm:h-14"
+            className="mt-0.5 h-11 shrink-0 sm:h-14"
             title="Trident Island"
           />
           <div className="min-w-0">

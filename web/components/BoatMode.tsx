@@ -50,7 +50,7 @@ export function BoatMode({ dashboard, settings, onExit }: Props) {
       <div className="mx-auto w-full max-w-2xl px-4 py-5 pb-12">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <TridentMark className="h-9 shrink-0 text-beacon" />
+            <TridentMark className="h-9 shrink-0" />
             <div>
             <p className="text-sm font-bold tracking-[0.2em] text-beacon uppercase">
               Boat Mode
