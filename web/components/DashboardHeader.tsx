@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RefreshCw, Settings as SettingsIcon, Ship } from "lucide-react";
+import { Fish, RefreshCw, Settings as SettingsIcon, Ship } from "lucide-react";
 import { formatClock, formatDate } from "@/lib/time";
 import { RelativeTime } from "./ui/RelativeTime";
 import { TridentMark } from "./ui/TridentMark";
@@ -16,6 +16,8 @@ type Props = {
   onRefresh: () => void;
   boatMode: boolean;
   onToggleBoatMode: () => void;
+  fishingMode: boolean;
+  onToggleFishingMode: () => void;
 };
 
 /**
@@ -31,6 +33,8 @@ export function DashboardHeader({
   onRefresh,
   boatMode,
   onToggleBoatMode,
+  fishingMode,
+  onToggleFishingMode,
 }: Props) {
   const [now, setNow] = useState<number | null>(null);
 
@@ -78,6 +82,21 @@ export function DashboardHeader({
           >
             <Ship className="size-4" aria-hidden />
             <span className="sr-only">Toggle boat mode</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleFishingMode}
+            aria-pressed={fishingMode}
+            title="Fishing"
+            className={`inline-flex size-9 items-center justify-center rounded-full border transition-colors ${
+              fishingMode
+                ? "border-transparent bg-beacon text-abyss"
+                : "border-foam/20 bg-abyss/55 text-mist backdrop-blur-md hover:text-foam"
+            }`}
+          >
+            <Fish className="size-4" aria-hidden />
+            <span className="sr-only">Toggle fishing mode</span>
           </button>
 
           <button

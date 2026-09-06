@@ -12,13 +12,17 @@ import { cached, type CacheResult } from "./cache";
 import { config, STALE_AFTER_MS } from "./config";
 import { fetchBorder } from "./providers/border";
 import { fetchRiver } from "./providers/river";
+import { fetchWaterQuality } from "./providers/water-quality";
 import { fetchWaterTemperature } from "./providers/water-temp";
 import { fetchWeather } from "./providers/weather";
+import { moonPhase, moonTimes, solunarPeriods } from "./astro/moon";
 import type {
+  AstroData,
   BorderData,
   DashboardResponse,
   RiverData,
   Section,
+  WaterQuality,
   WaterTemperature,
   WeatherData,
 } from "./types";
@@ -66,6 +70,35 @@ export async function getWaterTempSection(): Promise<Section<WaterTemperature>> 
   return toSection(result, (data) => data.observedAt, STALE_AFTER_MS.waterTemp);
 }
 
+export async function getWaterQualitySection(): Promise<Section<WaterQuality>> {
+  const result = await cached("water-quality", config.cacheTtlMs.waterQuality, fetchWaterQuality);
+  return toSection(result, (data) => data.observedAt, STALE_AFTER_MS.waterQuality);
+}
+
+/**
+ * Moon and solunar data. Computed from the coordinates and the clock, so unlike
+ * every other section this one cannot fail and needs no cache or Section wrapper.
+ */
+export function getAstro(timezone: string, sunrise: number | null, sunset: number | null): AstroData {
+  const now = Date.now();
+  const { latitude, longitude } = config.location;
+  const times = moonTimes(now, latitude, longitude, timezone);
+  const phase = moonPhase(now);
+
+  return {
+    sunrise,
+    sunset,
+    moonrise: times.rise,
+    moonset: times.set,
+    moonTransit: times.transit,
+    moonUnderfoot: times.underfoot,
+    moonPhase: phase.fraction,
+    moonIllumination: phase.illumination,
+    moonPhaseName: phase.name,
+    solunar: solunarPeriods(times),
+  };
+}
+
 export async function getBorderSection(): Promise<Section<BorderData>> {
   const result = await cached("border", config.cacheTtlMs.border, fetchBorder);
   return toSection(
@@ -83,26 +116,35 @@ export async function getBorderSection(): Promise<Section<BorderData>> {
 }
 
 export async function getDashboard(): Promise<DashboardResponse> {
-  const [weather, river, waterTemperature, border] = await Promise.all([
+  const [weather, river, waterTemperature, waterQuality, border] = await Promise.all([
     getWeatherSection(),
     getRiverSection(),
     getWaterTempSection(),
+    getWaterQualitySection(),
     getBorderSection(),
   ]);
+
+  const timezone =
+    weather.status === "ok"
+      ? weather.data.timezone
+      : (config.location.timezone ?? "America/New_York");
 
   return {
     location: {
       latitude: config.location.latitude,
       longitude: config.location.longitude,
       placeName: config.location.placeName,
-      timezone:
-        weather.status === "ok"
-          ? weather.data.timezone
-          : (config.location.timezone ?? "America/New_York"),
+      timezone,
     },
     weather,
     river,
     waterTemperature,
+    waterQuality,
+    astro: getAstro(
+      timezone,
+      weather.status === "ok" ? weather.data.sunrise : null,
+      weather.status === "ok" ? weather.data.sunset : null,
+    ),
     border,
     fetchedAt: Date.now(),
   };

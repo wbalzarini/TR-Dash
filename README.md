@@ -19,8 +19,37 @@ falling, where the river is sitting, and how long the bridge will take.
 | 7-day forecast | Tap a day for wind, gusts, UV, precipitation totals |
 | 24-hour trends | Interactive chart: temperature, wind, gusts, precipitation, pressure |
 
-Plus **Boat Mode** (the ship icon in the header): the six numbers that matter on
-the water, at a size you can read outdoors.
+Plus two alternative readings of the same data, from the header:
+
+- **Boat Mode** (ship icon) — the six numbers that matter on the water, at a
+  size you can read outdoors.
+- **Fishing Mode** (fish icon) — a 0–100 fishing conditions score for a chosen
+  species, an hour-by-hour timeline of the next 24 hours, sun/moon and solunar
+  periods, what has changed in the last day, and a recommendation. Neither mode
+  fetches anything of its own; both read the payload the dashboard already has.
+
+### How the fishing score works
+
+`web/lib/fishing/` holds a scoring engine with no React and no fetching in it.
+Seven factors — water temperature, pressure, wind, time of day, cloud cover,
+water conditions and sun/moon — are weighted to 100 points. Species preferences
+and factor weights are each a single table, so the model can be tuned without
+touching a component.
+
+Two rules shape it. Nothing is invented: a factor whose inputs are missing is
+excluded and the remaining weights are renormalised, with the card reporting
+what share of the model actually had data. And nothing is hidden: every factor
+shows its points and a line of plain English, so a badly chosen weight is
+visible rather than buried in one number.
+
+Water temperature, wind and water conditions can also *cap* the score — a gale
+is a gale however good everything else is — while time of day, cloud and the
+solunar periods only move the average. The weights are an angling-consensus
+starting point, not a measured result.
+
+Moon phase, moonrise/set and the solunar periods are computed from the
+coordinates and the clock in `web/lib/astro/moon.ts`; no weather API publishes
+them.
 
 ## Run it locally
 
@@ -44,6 +73,7 @@ All three are called from server-side route handlers, never from the browser.
 | --- | --- | --- |
 | Weather | [Open-Meteo](https://open-meteo.com/) | No key required |
 | River level | [CHS IWLS](https://api-iwls.dfo-mpo.gc.ca/swagger-ui.html) — Canadian Hydrographic Service / Government of Canada | Observed water levels (`wlo`) |
+| Flow, clarity, oxygen | [USGS Water Services](https://waterservices.usgs.gov/docs/instantaneous-values/) | Parameters `00060`, `63680`, `00300`; Fishing Mode only |
 | River temperature | [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/stationhome.html?id=8311062), falling back to [USGS](https://waterservices.usgs.gov/docs/instantaneous-values/) | Station 8311062 (Alexandria Bay); USGS parameter `00010` |
 | U.S. → Canada | [CBSA border wait times](https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html) | Official CSV feed |
 | Canada → U.S. | [U.S. CBP Border Wait Times](https://bwt.cbp.gov/) | Official JSON feed, port 0708 (Alexandria Bay) |
@@ -143,7 +173,10 @@ web/
     page.tsx              # the dashboard
     settings/page.tsx     # units, refresh interval, alert thresholds
     api/dashboard/        # the one route the browser calls
-    api/{weather,river,water-temp,border}/  # one source at a time, for debugging
+    api/{weather,river,water-temp,water-quality,border}/  # one source at a time
+  lib/
+    fishing/              # scoring engine — pure, tunable, no React
+    astro/moon.ts         # moon phase, rise/set, solunar periods
   lib/
     config.ts             # every env var, read once
     types.ts              # the whole client/server contract

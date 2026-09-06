@@ -9,7 +9,7 @@ Phone first, no accounts, no database.
 - Frontend: Next.js (App Router) + React + TypeScript + Tailwind CSS v4 — lives in `web/`
 - Charts: Recharts. Icons: Lucide.
 - Data: Open-Meteo (weather), CHS IWLS (river level), NOAA CO-OPS + USGS
-  (river temperature),
+  (river temperature), USGS (flow/clarity/oxygen),
   CBSA + U.S. CBP (border waits). All called server-side only, from
   `web/lib/providers/`.
 - Hosting: Vercel, root directory = `web/`, deploys from `main`
@@ -41,6 +41,10 @@ Run these from `web/`:
 - Every section is a `Section<T>`: either `{status:"ok", data, fetchedAt, stale}`
   or `{status:"unavailable", error, fetchedAt}`. One dead feed degrades one card
   and never the page.
+- `web/lib/fishing/` is the fishing scoring engine: pure functions, no React and
+  no fetching. Species ranges and factor weights are data, in one table each, so
+  scoring can be tuned without touching the UI. `web/lib/astro/moon.ts` computes
+  moon and solunar data — nothing fetches it.
 - `web/lib/providers/*.ts` are the only files that know an external API exists.
   Swapping a provider means rewriting one `fetchX` to return the same type.
 - Units are canonical on the wire — °F, mph, hPa, metres, inches — and converted

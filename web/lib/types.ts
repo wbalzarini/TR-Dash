@@ -164,6 +164,39 @@ export type WaterTemperature = {
   provider: "usgs" | "noaa-coops";
 };
 
+// ── Water quality ────────────────────────────────────────────────────────────
+
+/** Flow, clarity and oxygen. Used by Fishing Mode; optional everywhere else. */
+export type WaterQuality = {
+  /** Cubic feet per second. */
+  flowCfs: number | null;
+  /** Formazin nephelometric units — higher is murkier. */
+  turbidityNtu: number | null;
+  /** mg/L. */
+  dissolvedOxygenMgL: number | null;
+  /** Epoch ms of the freshest of the three readings. */
+  observedAt: number | null;
+  station: { id: string; name: string } | null;
+  provider: "usgs";
+};
+
+// ── Astronomy ────────────────────────────────────────────────────────────────
+
+export type AstroData = {
+  sunrise: number | null;
+  sunset: number | null;
+  moonrise: number | null;
+  moonset: number | null;
+  /** Moon at its highest and lowest — the solunar major periods. */
+  moonTransit: number | null;
+  moonUnderfoot: number | null;
+  /** 0 = new, 0.5 = full. */
+  moonPhase: number;
+  moonIllumination: number;
+  moonPhaseName: string;
+  solunar: Array<{ kind: "major" | "minor"; label: string; start: number; end: number }>;
+};
+
 // ── Border ───────────────────────────────────────────────────────────────────
 
 export type BorderStatus = "minimal" | "moderate" | "significant" | "heavy" | "unknown";
@@ -200,6 +233,10 @@ export type DashboardResponse = {
   weather: Section<WeatherData>;
   river: Section<RiverData>;
   waterTemperature: Section<WaterTemperature>;
+  /** Flow, clarity and oxygen. Fishing Mode only; optional everywhere. */
+  waterQuality: Section<WaterQuality>;
+  /** Moon and solunar periods — computed, not fetched. */
+  astro: AstroData;
   border: Section<BorderData>;
   fetchedAt: number;
 };

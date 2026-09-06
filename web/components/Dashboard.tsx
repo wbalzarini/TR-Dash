@@ -16,6 +16,7 @@ import { evaluateAlerts } from "@/lib/alerts";
 import { useSettings } from "@/lib/settings";
 import { AlertBanner } from "./AlertBanner";
 import { BoatMode } from "./BoatMode";
+import { FishingMode } from "./FishingMode";
 import { DashboardHeader } from "./DashboardHeader";
 import { DataSourcesFooter } from "./DataSourcesFooter";
 import { IslandHero } from "./IslandHero";
@@ -32,11 +33,15 @@ import { WeatherChart } from "./charts/WeatherChart";
 import { LineChart } from "lucide-react";
 
 const BOAT_MODE_KEY = "trident.boatMode.v1";
+const MODE_KEY = "trident.mode.v1";
+
+/** Boat Mode and Fishing Mode are alternative readings of the same payload. */
+type Mode = "dashboard" | "boat" | "fishing";
 
 export function Dashboard({ initial }: { initial: DashboardResponse }) {
   const [dashboard, setDashboard] = useState<DashboardResponse>(initial);
   const [refreshing, setRefreshing] = useState(false);
-  const [boatMode, setBoatMode] = useState(false);
+  const [mode, setMode] = useState<Mode>("dashboard");
   const { settings } = useSettings();
 
   // Guards against a slow response from a previous poll overwriting a newer one.
@@ -77,23 +82,36 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
 
   useEffect(() => {
     try {
-      setBoatMode(window.localStorage.getItem(BOAT_MODE_KEY) === "1");
+      const stored = window.localStorage.getItem(MODE_KEY);
+      if (stored === "boat" || stored === "fishing" || stored === "dashboard") {
+        setMode(stored);
+        return;
+      }
+      // Anyone who left Boat Mode on before this key existed keeps it.
+      if (window.localStorage.getItem(BOAT_MODE_KEY) === "1") setMode("boat");
+    } catch {
+      // A blocked localStorage just means starting on the dashboard.
+    }
+  }, []);
+
+  const selectMode = useCallback((next: Mode) => {
+    setMode(next);
+    try {
+      window.localStorage.setItem(MODE_KEY, next);
+      window.localStorage.setItem(BOAT_MODE_KEY, next === "boat" ? "1" : "0");
     } catch {
       // ignore
     }
   }, []);
 
-  const toggleBoatMode = useCallback(() => {
-    setBoatMode((previous) => {
-      const next = !previous;
-      try {
-        window.localStorage.setItem(BOAT_MODE_KEY, next ? "1" : "0");
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }, []);
+  const toggleBoatMode = useCallback(
+    () => selectMode(mode === "boat" ? "dashboard" : "boat"),
+    [mode, selectMode],
+  );
+  const toggleFishingMode = useCallback(
+    () => selectMode(mode === "fishing" ? "dashboard" : "fishing"),
+    [mode, selectMode],
+  );
 
   const alerts = useMemo(
     () => evaluateAlerts(dashboard, settings.alertThresholds),
@@ -103,12 +121,27 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
   const { timezone } = dashboard.location;
   const weather = dashboard.weather;
 
-  if (boatMode) {
+  // Read before the early returns: past them TypeScript has narrowed `mode` to
+  // "dashboard", and the comparisons would be provably false.
+  const inBoatMode = mode === "boat";
+  const inFishingMode = mode === "fishing";
+
+  if (mode === "boat") {
     return (
       <BoatMode
         dashboard={dashboard}
         settings={settings}
-        onExit={() => toggleBoatMode()}
+        onExit={() => selectMode("dashboard")}
+      />
+    );
+  }
+
+  if (mode === "fishing") {
+    return (
+      <FishingMode
+        dashboard={dashboard}
+        settings={settings}
+        onExit={() => selectMode("dashboard")}
       />
     );
   }
@@ -124,8 +157,10 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
         fetchedAt={dashboard.fetchedAt}
         refreshing={refreshing}
         onRefresh={() => void refresh()}
-        boatMode={boatMode}
+        boatMode={inBoatMode}
         onToggleBoatMode={toggleBoatMode}
+        fishingMode={inFishingMode}
+        onToggleFishingMode={toggleFishingMode}
       />
 
       <AlertBanner alerts={alerts} />

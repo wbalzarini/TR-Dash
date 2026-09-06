@@ -66,6 +66,7 @@ export type TridentConfig = {
     river: number;
     border: number;
     waterTemp: number;
+    waterQuality: number;
     /** The resolved river station rarely changes; hold it for a day. */
     riverStation: number;
   };
@@ -112,6 +113,7 @@ export const config: TridentConfig = {
     border: num("CACHE_TTL_BORDER", 600) * 1000,
     // River temperature moves slowly; half an hour is plenty.
     waterTemp: num("CACHE_TTL_WATER_TEMP", 1800) * 1000,
+    waterQuality: num("CACHE_TTL_WATER_QUALITY", 1800) * 1000,
     riverStation: 24 * 60 * 60 * 1000,
   },
 };
@@ -125,5 +127,6 @@ export const STALE_AFTER_MS = {
   weather: 90 * 60 * 1000,
   river: 3 * 60 * 60 * 1000,
   waterTemp: 6 * 60 * 60 * 1000,
+  waterQuality: 6 * 60 * 60 * 1000,
   border: 90 * 60 * 1000,
 } as const;
