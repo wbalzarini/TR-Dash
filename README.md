@@ -13,7 +13,7 @@ falling, where the river is sitting, and how long the bridge will take.
 | Wind | Sustained, gusts, and direction on a compass dial |
 | Barometric pressure | Current reading, 3-hour tendency, 24-hour sparkline |
 | Conditions | Humidity, dew point, chance of rain, cloud cover, visibility |
-| St. Lawrence River | Water level, trend, 24-hour and 7-day chart, and which gauge it came from |
+| St. Lawrence River | Water level and water temperature, each with its own trend, timestamp and gauge, plus a 24-hour/7-day level chart |
 | Getting to the Island | Thousand Islands Bridge waits, both directions, colour-coded |
 | Hourly | Next 24 hours — temperature, precipitation, wind |
 | 7-day forecast | Tap a day for wind, gusts, UV, precipitation totals |
@@ -43,7 +43,8 @@ All three are called from server-side route handlers, never from the browser.
 | | Source | Notes |
 | --- | --- | --- |
 | Weather | [Open-Meteo](https://open-meteo.com/) | No key required |
-| River | [CHS IWLS](https://api-iwls.dfo-mpo.gc.ca/swagger-ui.html) — Canadian Hydrographic Service / Government of Canada | Observed water levels (`wlo`) |
+| River level | [CHS IWLS](https://api-iwls.dfo-mpo.gc.ca/swagger-ui.html) — Canadian Hydrographic Service / Government of Canada | Observed water levels (`wlo`) |
+| River temperature | [USGS Water Services](https://waterservices.usgs.gov/docs/instantaneous-values/) | Instantaneous values, parameter `00010` |
 | U.S. → Canada | [CBSA border wait times](https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html) | Official CSV feed |
 | Canada → U.S. | [U.S. CBP Border Wait Times](https://bwt.cbp.gov/) | Official JSON feed, port 0708 (Alexandria Bay) |
 
@@ -62,6 +63,19 @@ To pin a different one, set `RIVER_STATION_CODE` (a CHS station code, browsable
 at [tides.gc.ca/en/stations](https://tides.gc.ca/en/stations)) or
 `RIVER_STATION_ID` (an IWLS UUID).
 
+### Picking the temperature gauge
+
+Water temperature comes from a different agency than the level — CHS publishes
+levels, USGS publishes temperature — so the two are fetched, timestamped and
+failed independently, and the card names both gauges.
+
+Discovery asks USGS for active sites reporting parameter `00010` near the
+property, then **prefers a site whose name mentions "St. Lawrence" over a closer
+one**. That check matters: the nearest thermometer may sit on a creek, and a
+creek's temperature is not the river's. For the default coordinates it resolves
+to **04260800, "St. Lawrence River at Alexandria Bay NY"**, about 6 km away.
+Pin a different site with `WATER_TEMP_STATION_ID`.
+
 ## Configuration
 
 Everything tunable lives in [`.env.example`](.env.example) and is read in one
@@ -71,6 +85,7 @@ place, `web/lib/config.ts`. Nothing else in the app touches `process.env`.
 TRIDENT_LATITUDE=44.35234       # the property
 TRIDENT_LONGITUDE=-75.99996
 RIVER_STATION_CODE=             # blank = use the nearest CHS gauge
+WATER_TEMP_STATION_ID=          # blank = use the nearest USGS river gauge
 BORDER_CBSA_LOCATION=Thousand Islands Bridge
 BORDER_CBP_PORT_NUMBER=0708
 ```
@@ -98,7 +113,8 @@ This is the part that matters, because government feeds go down.
   which shows up in Vercel's runtime logs.
 
 Upstream responses are cached in-process — 10 minutes for weather and border, 20
-for the river — so the external APIs aren't hammered.
+for the river level, 30 for water temperature — so the external APIs aren't
+hammered.
 
 ## Layout
 
@@ -108,7 +124,7 @@ web/
     page.tsx              # the dashboard
     settings/page.tsx     # units, refresh interval, alert thresholds
     api/dashboard/        # the one route the browser calls
-    api/{weather,river,border}/   # one source at a time, for debugging
+    api/{weather,river,water-temp,border}/  # one source at a time, for debugging
   lib/
     config.ts             # every env var, read once
     types.ts              # the whole client/server contract

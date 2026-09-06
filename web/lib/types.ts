@@ -139,6 +139,31 @@ export type RiverData = {
   provider: "chs-iwls";
 };
 
+// ── Water temperature ────────────────────────────────────────────────────────
+
+/** One temperature reading. °F, matching the air temperature elsewhere. */
+export type WaterTempReading = { time: number; fahrenheit: number };
+
+export type WaterTemperature = {
+  /** °F. USGS publishes °C; the provider converts. */
+  fahrenheit: number;
+  /** Epoch ms of the reading itself. */
+  observedAt: number;
+  trend: Trend;
+  changeFahrenheit: number;
+  trendWindowHours: number;
+  /** Oldest first, roughly the last 48 hours. */
+  history: WaterTempReading[];
+  station: {
+    /** USGS site number, e.g. "04260800". */
+    id: string;
+    name: string;
+    distanceKm: number | null;
+    resolvedBy: "configured" | "nearest";
+  };
+  provider: "usgs";
+};
+
 // ── Border ───────────────────────────────────────────────────────────────────
 
 export type BorderStatus = "minimal" | "moderate" | "significant" | "heavy" | "unknown";
@@ -174,6 +199,7 @@ export type DashboardResponse = {
   };
   weather: Section<WeatherData>;
   river: Section<RiverData>;
+  waterTemperature: Section<WaterTemperature>;
   border: Section<BorderData>;
   fetchedAt: number;
 };

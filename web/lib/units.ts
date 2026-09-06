@@ -13,6 +13,7 @@ import type { Trend } from "./types";
 // ── Conversions ──────────────────────────────────────────────────────────────
 
 export const fahrenheitToCelsius = (f: number) => ((f - 32) * 5) / 9;
+export const celsiusToFahrenheit = (c: number) => (c * 9) / 5 + 32;
 export const hpaToInHg = (hpa: number) => hpa * 0.0295299830714;
 export const hpaToMmHg = (hpa: number) => hpa * 0.750061683;
 export const metersToFeet = (m: number) => m * 3.280839895;

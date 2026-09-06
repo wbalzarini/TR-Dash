@@ -142,7 +142,12 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
           <ConditionsCard section={weather} settings={settings} />
         </div>
 
-        <RiverCard section={dashboard.river} settings={settings} timezone={timezone} />
+        <RiverCard
+          section={dashboard.river}
+          waterTemp={dashboard.waterTemperature}
+          settings={settings}
+          timezone={timezone}
+        />
 
         <BorderSection section={dashboard.border} settings={settings} />
 

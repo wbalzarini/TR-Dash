@@ -12,8 +12,16 @@ import { cached, type CacheResult } from "./cache";
 import { config, STALE_AFTER_MS } from "./config";
 import { fetchBorder } from "./providers/border";
 import { fetchRiver } from "./providers/river";
+import { fetchWaterTemperature } from "./providers/water-temp";
 import { fetchWeather } from "./providers/weather";
-import type { BorderData, DashboardResponse, RiverData, Section, WeatherData } from "./types";
+import type {
+  BorderData,
+  DashboardResponse,
+  RiverData,
+  Section,
+  WaterTemperature,
+  WeatherData,
+} from "./types";
 
 /**
  * Turns a cache result into a wire `Section`.
@@ -53,6 +61,11 @@ export async function getRiverSection(): Promise<Section<RiverData>> {
   return toSection(result, (data) => data.observedAt, STALE_AFTER_MS.river);
 }
 
+export async function getWaterTempSection(): Promise<Section<WaterTemperature>> {
+  const result = await cached("water-temp", config.cacheTtlMs.waterTemp, fetchWaterTemperature);
+  return toSection(result, (data) => data.observedAt, STALE_AFTER_MS.waterTemp);
+}
+
 export async function getBorderSection(): Promise<Section<BorderData>> {
   const result = await cached("border", config.cacheTtlMs.border, fetchBorder);
   return toSection(
@@ -70,9 +83,10 @@ export async function getBorderSection(): Promise<Section<BorderData>> {
 }
 
 export async function getDashboard(): Promise<DashboardResponse> {
-  const [weather, river, border] = await Promise.all([
+  const [weather, river, waterTemperature, border] = await Promise.all([
     getWeatherSection(),
     getRiverSection(),
+    getWaterTempSection(),
     getBorderSection(),
   ]);
 
@@ -88,6 +102,7 @@ export async function getDashboard(): Promise<DashboardResponse> {
     },
     weather,
     river,
+    waterTemperature,
     border,
     fetchedAt: Date.now(),
   };

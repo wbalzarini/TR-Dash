@@ -43,6 +43,11 @@ export type TridentConfig = {
     /** CHS station code, e.g. "14400" (Brockville). */
     stationCode: string | null;
   };
+  waterTemp: {
+    baseUrl: string;
+    /** USGS site number. Blank means discover the nearest river gauge. */
+    stationId: string | null;
+  };
   border: {
     cbsaUrl: string;
     cbsaLocation: string;
@@ -54,6 +59,7 @@ export type TridentConfig = {
     weather: number;
     river: number;
     border: number;
+    waterTemp: number;
     /** The resolved river station rarely changes; hold it for a day. */
     riverStation: number;
   };
@@ -74,6 +80,10 @@ export const config: TridentConfig = {
     stationId: optionalStr("RIVER_STATION_ID"),
     stationCode: optionalStr("RIVER_STATION_CODE"),
   },
+  waterTemp: {
+    baseUrl: str("WATER_TEMP_API_BASE_URL", "https://waterservices.usgs.gov/nwis"),
+    stationId: optionalStr("WATER_TEMP_STATION_ID"),
+  },
   border: {
     cbsaUrl: str("BORDER_CBSA_URL", "https://www.cbsa-asfc.gc.ca/bwt-taf/bwt-eng.csv"),
     cbsaLocation: str("BORDER_CBSA_LOCATION", "Thousand Islands Bridge"),
@@ -85,6 +95,8 @@ export const config: TridentConfig = {
     weather: num("CACHE_TTL_WEATHER", 600) * 1000,
     river: num("CACHE_TTL_RIVER", 1200) * 1000,
     border: num("CACHE_TTL_BORDER", 600) * 1000,
+    // River temperature moves slowly; half an hour is plenty.
+    waterTemp: num("CACHE_TTL_WATER_TEMP", 1800) * 1000,
     riverStation: 24 * 60 * 60 * 1000,
   },
 };
@@ -97,5 +109,6 @@ export const config: TridentConfig = {
 export const STALE_AFTER_MS = {
   weather: 90 * 60 * 1000,
   river: 3 * 60 * 60 * 1000,
+  waterTemp: 6 * 60 * 60 * 1000,
   border: 90 * 60 * 1000,
 } as const;

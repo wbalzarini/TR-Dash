@@ -8,8 +8,9 @@ Phone first, no accounts, no database.
 ## Stack
 - Frontend: Next.js (App Router) + React + TypeScript + Tailwind CSS v4 — lives in `web/`
 - Charts: Recharts. Icons: Lucide.
-- Data: Open-Meteo (weather), CHS IWLS (river), CBSA + U.S. CBP (border waits).
-  All called server-side only, from `web/lib/providers/`.
+- Data: Open-Meteo (weather), CHS IWLS (river level), USGS (river temperature),
+  CBSA + U.S. CBP (border waits). All called server-side only, from
+  `web/lib/providers/`.
 - Hosting: Vercel, root directory = `web/`, deploys from `main`
 
 ## Commands

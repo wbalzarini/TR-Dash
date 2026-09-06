@@ -77,8 +77,10 @@ export function RiverChart({ history, settings, timezone, className = "" }: Prop
   return (
     <div className={className}>
       <div className="mb-3 flex items-center justify-between gap-3">
+        {/* Named explicitly: the water-temperature block sits directly above
+            this chart, and an unlabelled axis reads as whatever came last. */}
         <span className="text-[11px] text-fathom">
-          {range === "24h" ? "Last 24 hours" : "Last 7 days"} · {unit}
+          Water level · {range === "24h" ? "last 24 hours" : "last 7 days"} · {unit}
         </span>
         <div className="flex gap-1 rounded-full border border-foam/10 bg-foam/[0.04] p-0.5">
           {(["24h", "7d"] as const).map((option) => (

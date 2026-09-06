@@ -36,6 +36,8 @@ type Props = {
 export function BoatMode({ dashboard, settings, onExit }: Props) {
   const weather = dashboard?.weather.status === "ok" ? dashboard.weather.data : null;
   const river = dashboard?.river.status === "ok" ? dashboard.river.data : null;
+  const waterTemp =
+    dashboard?.waterTemperature.status === "ok" ? dashboard.waterTemperature.data : null;
   const current = weather?.current;
 
   const tile = "rounded-2xl border border-foam/15 bg-foam/[0.07] p-4";
@@ -114,7 +116,7 @@ export function BoatMode({ dashboard, settings, onExit }: Props) {
               </div>
 
               <div className={tile}>
-                <p className={label}>River</p>
+                <p className={label}>River level</p>
                 {river ? (
                   <>
                     <p className={value}>{formatRiverLevel(river.levelMeters, settings)}</p>
@@ -130,6 +132,26 @@ export function BoatMode({ dashboard, settings, onExit }: Props) {
               </div>
 
               <div className={tile}>
+                <p className={label}>Water temp</p>
+                {waterTemp ? (
+                  <>
+                    <p className={value}>
+                      {formatTemp(waterTemp.fahrenheit, settings)}
+                      <span className="text-2xl font-semibold text-mist">
+                        {settings.temperatureUnit}
+                      </span>
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-mist">
+                      <span aria-hidden>{TREND_ARROW[waterTemp.trend]}</span>{" "}
+                      {TREND_LABEL[waterTemp.trend]}
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-3 text-lg font-semibold text-mist">Unavailable</p>
+                )}
+              </div>
+
+              <div className={`${tile} col-span-2`}>
                 <p className={label}>Rain</p>
                 <p className={value}>
                   {current.precipitationProbability == null

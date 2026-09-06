@@ -7,9 +7,14 @@ const SOURCES = [
     href: "https://open-meteo.com/",
   },
   {
-    label: "River",
+    label: "River level",
     name: "Canadian Hydrographic Service · Government of Canada",
     href: "https://tides.gc.ca/en",
+  },
+  {
+    label: "River temperature",
+    name: "U.S. Geological Survey",
+    href: "https://waterdata.usgs.gov/nwis",
   },
   {
     label: "Border · U.S. → Canada",
