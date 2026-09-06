@@ -43,7 +43,7 @@ export function DashboardHeader({
   }, []);
 
   return (
-    <header className="mb-6 sm:mb-8">
+    <header className="on-photo mb-6 sm:mb-8">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           {/* The mark carries the name, so it isn't decorative here. */}
@@ -73,7 +73,7 @@ export function DashboardHeader({
             className={`inline-flex size-9 items-center justify-center rounded-full border transition-colors ${
               boatMode
                 ? "border-transparent bg-beacon text-abyss"
-                : "border-foam/12 bg-foam/[0.04] text-mist hover:text-foam"
+                : "border-foam/20 bg-abyss/55 text-mist backdrop-blur-md hover:text-foam"
             }`}
           >
             <Ship className="size-4" aria-hidden />
@@ -85,7 +85,7 @@ export function DashboardHeader({
             onClick={onRefresh}
             disabled={refreshing}
             title="Refresh"
-            className="inline-flex size-9 items-center justify-center rounded-full border border-foam/12 bg-foam/[0.04] text-mist transition-colors hover:text-foam disabled:opacity-50"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-foam/20 bg-abyss/55 text-mist backdrop-blur-md transition-colors hover:text-foam disabled:opacity-50"
           >
             <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden />
             <span className="sr-only">Refresh dashboard</span>
@@ -94,7 +94,7 @@ export function DashboardHeader({
           <Link
             href="/settings"
             title="Settings"
-            className="inline-flex size-9 items-center justify-center rounded-full border border-foam/12 bg-foam/[0.04] text-mist transition-colors hover:text-foam"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-foam/20 bg-abyss/55 text-mist backdrop-blur-md transition-colors hover:text-foam"
           >
             <SettingsIcon className="size-4" aria-hidden />
             <span className="sr-only">Settings</span>
@@ -102,7 +102,7 @@ export function DashboardHeader({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fathom">
+      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-mist">
         {now != null ? (
           <>
             <span suppressHydrationWarning className="text-mist">
@@ -124,7 +124,7 @@ export function DashboardHeader({
         ) : null}
       </div>
 
-      <p className="mt-1 text-xs text-fathom/80">{placeName}</p>
+      <p className="mt-1 text-xs text-mist/80">{placeName}</p>
     </header>
   );
 }

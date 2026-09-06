@@ -18,6 +18,7 @@ import { AlertBanner } from "./AlertBanner";
 import { BoatMode } from "./BoatMode";
 import { DashboardHeader } from "./DashboardHeader";
 import { DataSourcesFooter } from "./DataSourcesFooter";
+import { IslandHero } from "./IslandHero";
 import { BorderSection } from "./cards/BorderSection";
 import { ConditionsCard } from "./cards/ConditionsCard";
 import { CurrentWeatherCard } from "./cards/CurrentWeatherCard";
@@ -113,7 +114,10 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
   }
 
   return (
-    <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-7 pb-4 sm:px-6 sm:pt-10">
+    <div className="relative">
+      <IslandHero />
+
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-7 pb-4 sm:px-6 sm:pt-10">
       <DashboardHeader
         placeName={dashboard.location.placeName}
         timezone={timezone}
@@ -172,6 +176,7 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
       </div>
 
       <DataSourcesFooter />
+      </div>
     </div>
   );
 }

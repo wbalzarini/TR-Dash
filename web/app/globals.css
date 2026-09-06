@@ -132,6 +132,15 @@ body::before {
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Type that sits over the hero photograph. A scrim heavy enough to make
+     small grey text readable over sunlit trees would also flatten the picture,
+     so the type carries its own shadow instead. */
+  .on-photo {
+    text-shadow:
+      0 1px 2px oklch(0.145 0.032 250 / 0.75),
+      0 2px 14px oklch(0.145 0.032 250 / 0.85);
+  }
 }
 
 /* Skeletons while the first payload lands. */
