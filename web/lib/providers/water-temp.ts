@@ -24,7 +24,7 @@
  */
 
 import { config } from "../config";
-import { fetchWithTimeout, logInfo } from "../logger";
+import { fetchWithTimeout, HttpError, logInfo } from "../logger";
 import { celsiusToFahrenheit } from "../units";
 import type { Trend, WaterTemperature, WaterTempReading } from "../types";
 
@@ -63,34 +63,66 @@ type UsgsResponse = {
   value?: { timeSeries?: UsgsTimeSeries[] };
 };
 
-function buildUrl(): string {
-  const url = new URL(`${config.waterTemp.baseUrl}/iv/`);
-  const q = url.searchParams;
-  q.set("format", "json");
-  q.set("parameterCd", WATER_TEMP_PARAMETER);
-  q.set("siteStatus", "active");
-  // Two days of readings gives us a trend and a sparkline.
-  q.set("period", "P2D");
+/**
+ * USGS site numbers to try before falling back to a geographic search.
+ *
+ * These are the two USGS gauges on this stretch of the St. Lawrence. Asking for
+ * them by number is both cheaper and more reliable than a bounding-box search,
+ * which has to come back through a much larger result set and is the query most
+ * likely to trip a service limit.
+ */
+const DEFAULT_RIVER_SITES = [
+  "04260800", // St. Lawrence River at Alexandria Bay NY — ~6 km from the island
+  "04264000", // St. Lawrence River at Ogdensburg NY — downriver
+];
 
-  // USGS allows exactly one "major filter", so it's either the pinned site or
-  // the bounding box — never both.
+type Attempt = { label: string; url: string };
+
+/**
+ * The queries to try, in order. The first one that yields a usable reading
+ * wins; a query that returns nothing is not an error, it's just a miss.
+ *
+ * USGS allows exactly one "major filter" per request, so a site list and a
+ * bounding box can never be combined — they have to be separate attempts.
+ */
+function buildAttempts(): Attempt[] {
+  const base = () => {
+    const url = new URL(`${config.waterTemp.baseUrl}/iv/`);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("parameterCd", WATER_TEMP_PARAMETER);
+    // Two days of readings gives us a trend and a sparkline.
+    url.searchParams.set("period", "P2D");
+    return url;
+  };
+
+  // An explicitly pinned station is the only thing we try.
   if (config.waterTemp.stationId) {
-    q.set("sites", config.waterTemp.stationId);
-  } else {
-    const { latitude, longitude } = config.location;
-    const round = (value: number) => Number(value.toFixed(5));
-    q.set(
-      "bBox",
-      [
-        round(longitude - SEARCH_BOX_DEGREES),
-        round(latitude - SEARCH_BOX_DEGREES),
-        round(longitude + SEARCH_BOX_DEGREES),
-        round(latitude + SEARCH_BOX_DEGREES),
-      ].join(","),
-    );
+    const url = base();
+    url.searchParams.set("sites", config.waterTemp.stationId);
+    return [{ label: `site ${config.waterTemp.stationId}`, url: url.toString() }];
   }
 
-  return url.toString();
+  const bySite = base();
+  bySite.searchParams.set("sites", DEFAULT_RIVER_SITES.join(","));
+
+  const byBox = base();
+  byBox.searchParams.set("siteStatus", "active");
+  const { latitude, longitude } = config.location;
+  const round = (value: number) => Number(value.toFixed(5));
+  byBox.searchParams.set(
+    "bBox",
+    [
+      round(longitude - SEARCH_BOX_DEGREES),
+      round(latitude - SEARCH_BOX_DEGREES),
+      round(longitude + SEARCH_BOX_DEGREES),
+      round(latitude + SEARCH_BOX_DEGREES),
+    ].join(","),
+  );
+
+  return [
+    { label: "St. Lawrence gauges", url: bySite.toString() },
+    { label: "nearby gauges", url: byBox.toString() },
+  ];
 }
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -126,29 +158,21 @@ function readingsFrom(series: UsgsTimeSeries): WaterTempReading[] {
 
 const mentionsStLawrence = (name: string) => /st\.?\s*lawrence/i.test(name);
 
-export async function fetchWaterTemperature(): Promise<WaterTemperature> {
-  const response = await fetchWithTimeout(buildUrl(), { timeoutMs: 12_000 });
-  const payload = (await response.json()) as UsgsResponse;
-  const allSeries = payload.value?.timeSeries ?? [];
+type Candidate = {
+  readings: WaterTempReading[];
+  name: string;
+  id: string;
+  distanceKm: number | null;
+  onTheRiver: boolean;
+};
 
-  if (allSeries.length === 0) {
-    throw new Error("USGS reported no water-temperature sites near the island");
-  }
-
+/** Turns one USGS response into the sites it usefully describes. */
+function candidatesFrom(payload: UsgsResponse): Candidate[] {
   const { latitude, longitude } = config.location;
+  const out: Candidate[] = [];
 
-  type Candidate = {
-    series: UsgsTimeSeries;
-    readings: WaterTempReading[];
-    name: string;
-    id: string;
-    distanceKm: number | null;
-    onTheRiver: boolean;
-  };
-
-  const candidates: Candidate[] = [];
-  for (const series of allSeries) {
-    // A bounding-box query returns every parameter the site publishes.
+  for (const series of payload.value?.timeSeries ?? []) {
+    // A bounding-box query returns every parameter a site publishes.
     const code = series.variable?.variableCode?.[0]?.value;
     if (code && code !== WATER_TEMP_PARAMETER) continue;
 
@@ -157,23 +181,48 @@ export async function fetchWaterTemperature(): Promise<WaterTemperature> {
 
     const name = series.sourceInfo?.siteName?.trim() || "Unnamed USGS site";
     const geo = series.sourceInfo?.geoLocation?.geogLocation;
-    const distanceKm =
-      geo?.latitude != null && geo?.longitude != null
-        ? haversineKm(latitude, longitude, geo.latitude, geo.longitude)
-        : null;
 
-    candidates.push({
-      series,
+    out.push({
       readings,
       name,
       id: series.sourceInfo?.siteCode?.[0]?.value ?? "unknown",
-      distanceKm,
+      distanceKm:
+        geo?.latitude != null && geo?.longitude != null
+          ? haversineKm(latitude, longitude, geo.latitude, geo.longitude)
+          : null,
       onTheRiver: mentionsStLawrence(name),
     });
   }
 
+  return out;
+}
+
+export async function fetchWaterTemperature(): Promise<WaterTemperature> {
+  const attempts = buildAttempts();
+  const misses: string[] = [];
+  let candidates: Candidate[] = [];
+
+  for (const attempt of attempts) {
+    try {
+      const response = await fetchWithTimeout(attempt.url, { timeoutMs: 12_000 });
+      const found = candidatesFrom((await response.json()) as UsgsResponse);
+      if (found.length > 0) {
+        candidates = found;
+        break;
+      }
+      misses.push(`${attempt.label}: no readings returned`);
+    } catch (error) {
+      // USGS answers "nothing matched your criteria" with a 400 rather than an
+      // empty result, so a 4xx here means try the next query, not give up.
+      const isNoData = error instanceof HttpError && error.status >= 400 && error.status < 500;
+      const message = error instanceof Error ? error.message : String(error);
+      misses.push(`${attempt.label}: ${message}`);
+      if (!isNoData) logInfo("water-temp", `${attempt.label} failed — ${message}`);
+    }
+  }
+
   if (candidates.length === 0) {
-    throw new Error("USGS returned no usable water-temperature readings");
+    throw new Error(`USGS returned no usable water temperature. Tried ${misses.join(" | ")}`);
   }
 
   // A gauge actually on the St. Lawrence beats a closer one on a tributary.

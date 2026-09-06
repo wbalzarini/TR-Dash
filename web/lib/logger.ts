@@ -16,6 +16,17 @@ export function logFailure(source: string, error: unknown): void {
   }
 }
 
+/** Carries the status code so callers can tell "no data" from a real outage. */
+export class HttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+  }
+}
+
 export function logInfo(source: string, message: string): void {
   console.log(`[trident] ${source}: ${message}`);
 }
@@ -42,7 +53,21 @@ export async function fetchWithTimeout(
       cache: "no-store",
     });
     if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText} from ${hostOf(url)}`);
+      // Several of these APIs explain themselves in the body and say nothing
+      // useful in the status line — USGS answers "no matching data" with a
+      // bare 400. Carry a snippet through so the failure is diagnosable from
+      // the /api/* route without re-running the request by hand.
+      let detail = "";
+      try {
+        const body = (await response.text()).trim().replace(/\s+/g, " ");
+        if (body) detail = `: ${body.slice(0, 300)}`;
+      } catch {
+        // A body we can't read is not worth failing over.
+      }
+      throw new HttpError(
+        `${response.status} ${response.statusText} from ${hostOf(url)}${detail}`,
+        response.status,
+      );
     }
     return response;
   } catch (error) {

@@ -57,9 +57,18 @@ function WaterTempRow({
 }) {
   if (section.status === "unavailable") {
     return (
-      <div className="mt-5 flex items-center gap-2 border-t border-foam/8 pt-4 text-xs text-fathom">
-        <Thermometer className="size-3.5 shrink-0" aria-hidden />
-        Water temperature temporarily unavailable
+      <div className="mt-5 border-t border-foam/8 pt-4">
+        <p className="flex items-center gap-2 text-xs text-fathom">
+          <Thermometer className="size-3.5 shrink-0" aria-hidden />
+          Water temperature temporarily unavailable
+        </p>
+        {/* The upstream reason, verbatim. A gauge can be offline for a season,
+            which is worth telling apart from the service being down. */}
+        {section.error ? (
+          <p className="mt-1.5 pl-5 text-[11px] leading-relaxed break-words text-fathom/70">
+            {section.error}
+          </p>
+        ) : null}
       </div>
     );
   }
