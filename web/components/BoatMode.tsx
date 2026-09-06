@@ -18,6 +18,7 @@ import {
 import { Compass } from "./ui/Compass";
 import { WeatherIcon } from "./ui/WeatherIcon";
 import { RelativeTime } from "./ui/RelativeTime";
+import { TridentMark } from "./ui/TridentMark";
 
 type Props = {
   dashboard: DashboardResponse | null;
@@ -48,7 +49,9 @@ export function BoatMode({ dashboard, settings, onExit }: Props) {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-abyss">
       <div className="mx-auto w-full max-w-2xl px-4 py-5 pb-12">
         <div className="mb-5 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <TridentMark className="h-9 shrink-0 text-beacon" />
+            <div>
             <p className="text-sm font-bold tracking-[0.2em] text-beacon uppercase">
               Boat Mode
             </p>
@@ -57,6 +60,7 @@ export function BoatMode({ dashboard, settings, onExit }: Props) {
                 Updated <RelativeTime epochMs={dashboard.fetchedAt} />
               </p>
             ) : null}
+            </div>
           </div>
           <button
             type="button"

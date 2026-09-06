@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw, Settings as SettingsIcon, Ship } from "lucide-react";
 import { formatClock, formatDate } from "@/lib/time";
 import { RelativeTime } from "./ui/RelativeTime";
+import { TridentMark } from "./ui/TridentMark";
 
 type Props = {
   placeName: string;
@@ -44,15 +45,22 @@ export function DashboardHeader({
   return (
     <header className="mb-6 sm:mb-8">
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-[1.6rem] leading-[1.05] font-semibold tracking-[0.14em] text-foam uppercase sm:text-[2.25rem] sm:tracking-[0.22em]">
-            Trident Island
-          </h1>
-          <div className="mt-2.5 flex items-center gap-2.5">
-            <span className="h-px w-8 bg-gradient-to-r from-beacon to-transparent" aria-hidden />
-            <p className="text-[10px] tracking-[0.08em] whitespace-nowrap text-beacon uppercase sm:text-xs sm:tracking-[0.14em]">
-              The Island Command Center
-            </p>
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          {/* The mark carries the name, so it isn't decorative here. */}
+          <TridentMark
+            className="mt-0.5 h-11 shrink-0 text-beacon sm:h-14"
+            title="Trident Island"
+          />
+          <div className="min-w-0">
+            <h1 className="text-[1.6rem] leading-[1.05] font-semibold tracking-[0.14em] text-foam uppercase sm:text-[2.25rem] sm:tracking-[0.22em]">
+              Trident Island
+            </h1>
+            <div className="mt-2.5 flex items-center gap-2.5">
+              <span className="h-px w-8 bg-gradient-to-r from-beacon to-transparent" aria-hidden />
+              <p className="text-[10px] tracking-[0.08em] whitespace-nowrap text-beacon uppercase sm:text-xs sm:tracking-[0.14em]">
+                The Island Command Center
+              </p>
+            </div>
           </div>
         </div>
 
