@@ -1,14 +1,20 @@
 /**
- * The Trident Island mark.
+ * The Trident Island mark, after the trident on the island's own artwork:
+ * three slender spikes with swept-back arrowhead barbs, rising from a deep
+ * bowl, on a shaft that tapers to a point.
  *
- * Drawn inline rather than shipped as an asset: it stays sharp at any size,
- * costs no extra request, and picks up whatever colour it's placed in. Sizing
- * comes from the className (the viewBox is 32×44, so it's taller than wide —
- * give it a height, not a width).
+ * Drawn inline rather than shipped as an asset so it stays sharp at any size,
+ * costs no extra request, and takes its colour from wherever it's placed.
+ * Sizing comes from the className — the viewBox is 34×54, taller than wide, so
+ * give it a height rather than a width.
  *
- * The geometry is deliberately simple. Three straight tines and a crescent
- * yoke survive being drawn at 16px in a browser tab, which barbs and tapered
- * curves do not.
+ * The bowl is a stroke rather than part of the outline. As a filled path its
+ * inner curve left a small notch where it met the shaft; a stroke overlaps
+ * both cleanly and keeps its weight when the mark is scaled.
+ *
+ * This is the detailed mark, for anywhere it renders at ~32px or larger. The
+ * browser tab icon (app/icon.svg) stays a heavier, simpler trident, because
+ * these spikes go to mush at 16px.
  */
 
 type Props = {
@@ -20,24 +26,31 @@ type Props = {
 export function TridentMark({ className = "h-10", title }: Props) {
   return (
     <svg
-      viewBox="0 0 32 44"
+      viewBox="0 0 34 54"
       className={className}
-      fill="currentColor"
       role={title ? "img" : undefined}
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
       {title ? <title>{title}</title> : null}
-      {/* Centre spear */}
-      <path d="M16 1.4 L17.9 8 L17.9 18 L14.1 18 L14.1 8 Z" />
-      {/* Outer tines */}
-      <path d="M6.0 2.6 L8.6 15.8 L4.2 15.8 Z" />
-      <path d="M26.0 2.6 L27.8 15.8 L23.4 15.8 Z" />
-      {/* Yoke joining the tines to the shaft */}
-      <path d="M4.2 13.0 C6.6 19.8 25.4 19.8 27.8 13.0 L27.8 16.6 C25.4 22.2 6.6 22.2 4.2 16.6 Z" />
-      {/* Shaft and collar */}
-      <rect x="14.5" y="18" width="3" height="24" rx="1.4" />
-      <rect x="11.2" y="23.2" width="9.6" height="2.4" rx="1.2" />
+      <g fill="currentColor">
+        {/* Centre spike and shaft */}
+        <path d="M17 1 L19.5 7.4 L17.9 5.9 L17.9 46 L16.1 46 L16.1 5.9 L14.5 7.4 Z" />
+        {/* Tapered point */}
+        <path d="M16.1 44 L17.9 44 L17 53.4 Z" />
+        {/* Outer spikes */}
+        <path d="M7 6.6 L9.1 12.6 L7.78 11.1 L7.78 31 L6.22 31 L6.22 11.1 L4.9 12.6 Z" />
+        <path d="M27 6.6 L29.1 12.6 L27.78 11.1 L27.78 31 L26.22 31 L26.22 11.1 L24.9 12.6 Z" />
+        {/* Collar */}
+        <path d="M13.4 42.4 L20.6 42.4 L20.6 43.9 L13.4 43.9 Z" />
+      </g>
+      {/* Bowl sweeping the outer spikes into the shaft */}
+      <path
+        d="M7 30 C7 36.4, 10.8 39.5, 17 39.5 C23.2 39.5, 27 36.4, 27 30"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.56"
+      />
     </svg>
   );
 }
