@@ -34,6 +34,11 @@
     ui-sans-serif, system-ui, -apple-system, "SF Pro Display", "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 
+  /* Wordmark only. Falls back to a bookish serif if the webfont fails. */
+  --font-wordmark:
+    var(--font-cinzel), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+    ui-serif, serif;
+
   --radius-card: 1.25rem;
 }
 

@@ -52,7 +52,7 @@ export function DashboardHeader({
             title="Trident Island"
           />
           <div className="min-w-0">
-            <h1 className="text-[1.6rem] leading-[1.05] font-semibold tracking-[0.14em] text-foam uppercase sm:text-[2.25rem] sm:tracking-[0.22em]">
+            <h1 className="font-wordmark text-[1.62rem] leading-[1.04] font-extrabold tracking-[0.08em] text-foam uppercase sm:text-[2.3rem] sm:tracking-[0.12em]">
               Trident Island
             </h1>
             <div className="mt-2.5 flex items-center gap-2.5">
