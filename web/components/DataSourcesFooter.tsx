@@ -13,8 +13,8 @@ const SOURCES = [
   },
   {
     label: "River temperature",
-    name: "U.S. Geological Survey",
-    href: "https://waterdata.usgs.gov/nwis",
+    name: "NOAA Tides & Currents · U.S. Geological Survey",
+    href: "https://tidesandcurrents.noaa.gov/stationhome.html?id=8311062",
   },
   {
     label: "Border · U.S. → Canada",

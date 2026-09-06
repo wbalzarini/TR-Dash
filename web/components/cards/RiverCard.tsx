@@ -44,7 +44,8 @@ const TEMP_TREND_TONE: Record<string, PillTone> = {
  * Water temperature, sitting under the level inside the same card.
  *
  * It belongs here rather than in its own card — it's the same river — but it
- * comes from USGS rather than the Canadian Hydrographic Service, so it carries
+ * comes from NOAA or USGS rather than the Canadian Hydrographic Service, so it
+ * carries
  * its own timestamp, its own station name and its own failure state. A dead
  * thermometer must never make the level look stale, or vice versa.
  */
@@ -73,8 +74,10 @@ function WaterTempRow({
     );
   }
 
-  const { fahrenheit, observedAt, trend, changeFahrenheit, trendWindowHours, station } =
+  const { fahrenheit, observedAt, trend, changeFahrenheit, trendWindowHours, station, provider } =
     section.data;
+  // Two agencies publish this depending on which one answered; say which.
+  const agency = provider === "noaa-coops" ? "NOAA" : "USGS";
   const secondary =
     settings.temperatureUnit === "F"
       ? `${fahrenheitToCelsius(fahrenheit).toFixed(1)} °C`
@@ -116,7 +119,9 @@ function WaterTempRow({
           <span>Updated</span>
         )}
         <RelativeTime epochMs={observedAt} />
-        <span>· USGS {station.id}</span>
+        <span>
+          · {agency} {station.id}
+        </span>
         <span className="text-fathom/80">{station.name}</span>
       </p>
     </div>

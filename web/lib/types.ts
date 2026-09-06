@@ -145,7 +145,7 @@ export type RiverData = {
 export type WaterTempReading = { time: number; fahrenheit: number };
 
 export type WaterTemperature = {
-  /** °F. USGS publishes °C; the provider converts. */
+  /** °F. NOAA publishes °F directly; USGS publishes °C and is converted. */
   fahrenheit: number;
   /** Epoch ms of the reading itself. */
   observedAt: number;
@@ -155,13 +155,13 @@ export type WaterTemperature = {
   /** Oldest first, roughly the last 48 hours. */
   history: WaterTempReading[];
   station: {
-    /** USGS site number, e.g. "04260800". */
+    /** NOAA CO-OPS station id or USGS site number, depending on provider. */
     id: string;
     name: string;
     distanceKm: number | null;
     resolvedBy: "configured" | "nearest";
   };
-  provider: "usgs";
+  provider: "usgs" | "noaa-coops";
 };
 
 // ── Border ───────────────────────────────────────────────────────────────────

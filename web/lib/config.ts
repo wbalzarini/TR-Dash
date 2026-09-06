@@ -44,8 +44,14 @@ export type TridentConfig = {
     stationCode: string | null;
   };
   waterTemp: {
+    /** Which sources to try, in order. See providers/water-temp.ts. */
+    sources: string[];
+    /** NOAA CO-OPS station id. 8311062 is Alexandria Bay, NY. */
+    noaaStationId: string | null;
+    noaaBaseUrl: string;
+    /** USGS Water Services base. */
     baseUrl: string;
-    /** USGS site number. Blank means discover the nearest river gauge. */
+    /** USGS site number. Blank means try the river gauges, then search. */
     stationId: string | null;
   };
   border: {
@@ -81,6 +87,15 @@ export const config: TridentConfig = {
     stationCode: optionalStr("RIVER_STATION_CODE"),
   },
   waterTemp: {
+    sources: str("WATER_TEMP_SOURCES", "noaa,usgs")
+      .split(",")
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean),
+    noaaStationId: optionalStr("WATER_TEMP_NOAA_STATION_ID") ?? "8311062",
+    noaaBaseUrl: str(
+      "WATER_TEMP_NOAA_BASE_URL",
+      "https://api.tidesandcurrents.noaa.gov/api/prod",
+    ),
     baseUrl: str("WATER_TEMP_API_BASE_URL", "https://waterservices.usgs.gov/nwis"),
     stationId: optionalStr("WATER_TEMP_STATION_ID"),
   },

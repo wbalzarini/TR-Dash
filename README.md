@@ -44,7 +44,7 @@ All three are called from server-side route handlers, never from the browser.
 | --- | --- | --- |
 | Weather | [Open-Meteo](https://open-meteo.com/) | No key required |
 | River level | [CHS IWLS](https://api-iwls.dfo-mpo.gc.ca/swagger-ui.html) — Canadian Hydrographic Service / Government of Canada | Observed water levels (`wlo`) |
-| River temperature | [USGS Water Services](https://waterservices.usgs.gov/docs/instantaneous-values/) | Instantaneous values, parameter `00010` |
+| River temperature | [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/stationhome.html?id=8311062), falling back to [USGS](https://waterservices.usgs.gov/docs/instantaneous-values/) | Station 8311062 (Alexandria Bay); USGS parameter `00010` |
 | U.S. → Canada | [CBSA border wait times](https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html) | Official CSV feed |
 | Canada → U.S. | [U.S. CBP Border Wait Times](https://bwt.cbp.gov/) | Official JSON feed, port 0708 (Alexandria Bay) |
 
@@ -65,16 +65,24 @@ at [tides.gc.ca/en/stations](https://tides.gc.ca/en/stations)) or
 
 ### Picking the temperature gauge
 
-Water temperature comes from a different agency than the level — CHS publishes
-levels, USGS publishes temperature — so the two are fetched, timestamped and
-failed independently, and the card names both gauges.
+Water temperature comes from different agencies than the level — CHS publishes
+levels here, NOAA and USGS publish temperature — so the two halves of the card
+are fetched, timestamped and failed independently, and each names its gauge.
 
-Discovery asks USGS for active sites reporting parameter `00010` near the
-property, then **prefers a site whose name mentions "St. Lawrence" over a closer
-one**. That check matters: the nearest thermometer may sit on a creek, and a
-creek's temperature is not the river's. For the default coordinates it resolves
-to **04260800, "St. Lawrence River at Alexandria Bay NY"**, about 6 km away.
-Pin a different site with `WATER_TEMP_STATION_ID`.
+Two sources are tried in order and the first usable reading wins:
+
+1. **NOAA CO-OPS station 8311062**, Alexandria Bay NY (NDBC `ALXN6`) — about
+   5 km from the island, sampled every six minutes, published in °F.
+2. **USGS** parameter `00010` — the gauges at Alexandria Bay (`04260800`) and
+   Ogdensburg (`04264000`), then a search for any nearby gauge reporting
+   temperature. That search **prefers a site whose name mentions "St. Lawrence"
+   over a closer one**, because the nearest thermometer may sit on a creek and a
+   creek's temperature is not the river's.
+
+Two agencies rather than one because a single river-temperature feed is a single
+point of failure, and these sensors are pulled seasonally. Set
+`WATER_TEMP_SOURCES` to reorder or narrow the chain. When every source misses,
+the card prints what each one said rather than just "unavailable".
 
 ## Configuration
 
@@ -85,7 +93,7 @@ place, `web/lib/config.ts`. Nothing else in the app touches `process.env`.
 TRIDENT_LATITUDE=44.35234       # the property
 TRIDENT_LONGITUDE=-75.99996
 RIVER_STATION_CODE=             # blank = use the nearest CHS gauge
-WATER_TEMP_STATION_ID=          # blank = use the nearest USGS river gauge
+WATER_TEMP_SOURCES=noaa,usgs    # order to try the temperature sources
 BORDER_CBSA_LOCATION=Thousand Islands Bridge
 BORDER_CBP_PORT_NUMBER=0708
 ```
