@@ -18,6 +18,14 @@ function optionalStr(name: string): string | null {
   return value && value.trim() !== "" ? value.trim() : null;
 }
 
+/** Comma-separated list, lowercased and trimmed. Empty entries dropped. */
+function csv(name: string, fallback: string): string[] {
+  return str(name, fallback)
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 function num(name: string, fallback: number): number {
   const raw = process.env[name];
   if (!raw || raw.trim() === "") return fallback;
@@ -63,10 +71,23 @@ export type TridentConfig = {
     /** Timezone the agencies stamp their readings in. */
     timezone: string;
   };
+  bridge: {
+    /** Ontario 511 events endpoint. Open data, no key. */
+    ontarioUrl: string;
+    /** 511NY events endpoint. Needs a free developer key. */
+    nyUrl: string;
+    /** 511NY developer key. Null disables the American span. */
+    nyApiKey: string | null;
+    /** Substrings that mark an Ontario event as ours (case-insensitive). */
+    ontarioMatch: string[];
+    /** Substrings that mark a New York event as ours (case-insensitive). */
+    nyMatch: string[];
+  };
   cacheTtlMs: {
     weather: number;
     river: number;
     border: number;
+    bridge: number;
     waterTemp: number;
     waterQuality: number;
     /** The resolved river station rarely changes; hold it for a day. */
@@ -113,10 +134,24 @@ export const config: TridentConfig = {
       optionalStr("TRIDENT_TIMEZONE") ??
       "America/New_York",
   },
+  bridge: {
+    ontarioUrl: str("BRIDGE_ONTARIO_511_URL", "https://511on.ca/api/v2/get/event"),
+    nyUrl: str("BRIDGE_NY_511_URL", "https://511ny.org/api/getevents"),
+    nyApiKey: optionalStr("NY511_API_KEY"),
+    ontarioMatch: csv(
+      "BRIDGE_ONTARIO_MATCH",
+      "137,thousand islands,lansdowne,ivy lea",
+    ),
+    nyMatch: csv(
+      "BRIDGE_NY_MATCH",
+      "thousand islands,wellesley island,alexandria bay,collins landing",
+    ),
+  },
   cacheTtlMs: {
     weather: num("CACHE_TTL_WEATHER", 600) * 1000,
     river: num("CACHE_TTL_RIVER", 1200) * 1000,
     border: num("CACHE_TTL_BORDER", 600) * 1000,
+    bridge: num("CACHE_TTL_BRIDGE", 900) * 1000,
     // River temperature moves slowly; half an hour is plenty.
     waterTemp: num("CACHE_TTL_WATER_TEMP", 1800) * 1000,
     waterQuality: num("CACHE_TTL_WATER_QUALITY", 1800) * 1000,
@@ -137,4 +172,7 @@ export const STALE_AFTER_MS = {
   // Both agencies publish about once an hour, so a 90-minute window flipped to
   // "stale" for part of every cycle. This still catches a feed that has died.
   border: 150 * 60 * 1000,
+  // 511 events persist until an operator clears them, so an old timestamp is
+  // normal and is not a sign the feed died. This only catches a dead feed.
+  bridge: 12 * 60 * 60 * 1000,
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Car, ExternalLink, Home } from "lucide-react";
+import { AlertTriangle, ArrowRight, Car, ExternalLink } from "lucide-react";
 import type { BorderData, BorderDirection, BorderStatus, Section } from "@/lib/types";
 import type { Settings } from "@/lib/settings";
 import { Card, CardHeader } from "../ui/Card";
@@ -23,36 +23,47 @@ const STATUS_META: Record<
 };
 
 /**
- * One direction of the crossing, as its own card.
+ * One direction inside the customs card.
  *
  * The two directions come from two different governments — CBSA northbound,
- * CBP southbound — so each carries its own wait, its own timestamp and its own
- * failure state. One agency going quiet must never make the other look stale.
+ * CBP southbound — so each keeps its own timestamp, staleness flag and source
+ * line even though they now share a card. One agency going quiet must never
+ * make the other's number look stale.
  */
-function DirectionCard({
+function Direction({
   title,
-  subtitle,
   fromFlag,
   toFlag,
-  icon,
   direction,
   sourceUrl,
 }: {
   title: string;
-  subtitle: string;
   fromFlag: string;
   toFlag: string;
-  icon: React.ReactNode;
   direction: BorderDirection | null;
   sourceUrl: string;
 }) {
+  const header = (
+    <div className="flex items-center gap-2">
+      <span className="text-base leading-none" aria-hidden>
+        {fromFlag}
+      </span>
+      <ArrowRight className="size-3.5 text-fathom" aria-hidden />
+      <span className="text-base leading-none" aria-hidden>
+        {toFlag}
+      </span>
+      <p className="ml-1 text-xs font-medium uppercase tracking-wider text-mist">{title}</p>
+    </div>
+  );
+
   if (!direction) {
     return (
-      <Card className="p-5 sm:p-6">
-        <CardHeader title={title} icon={icon} />
-        <p className="mb-4 text-sm text-mist">{subtitle}</p>
-        <Unavailable label="Wait time" />
-      </Card>
+      <div>
+        {header}
+        <div className="mt-3">
+          <Unavailable label="Wait time" />
+        </div>
+      </div>
     );
   }
 
@@ -61,86 +72,70 @@ function DirectionCard({
     direction.updatedAt != null && Date.now() - direction.updatedAt > STALE_AFTER_MS;
 
   return (
-    <Card className="p-5 sm:p-6">
-      <CardHeader
-        title={title}
-        icon={icon}
-        aside={
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-[11px] text-fathom transition-colors hover:text-beacon"
-          >
-            {direction.source.toUpperCase()}
-            <ExternalLink className="size-3" aria-hidden />
-          </a>
-        }
-      />
+    <div>
+      {header}
 
-      <div className="flex items-center gap-2">
-        <span className="text-lg leading-none" aria-hidden>
-          {fromFlag}
-        </span>
-        <ArrowRight className="size-4 text-fathom" aria-hidden />
-        <span className="text-lg leading-none" aria-hidden>
-          {toFlag}
-        </span>
-        <p className="ml-1 text-sm text-mist">{subtitle}</p>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-2">
+      <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
         {direction.waitMinutes == null ? (
-          <p className="text-3xl font-semibold text-mist">
+          <p className="text-2xl font-semibold text-mist">
             {direction.portStatus ?? "Not reported"}
           </p>
         ) : (
           <>
-            <p className={`readout text-6xl font-semibold sm:text-7xl ${meta.text}`}>
+            <p className={`readout text-5xl font-semibold sm:text-6xl ${meta.text}`}>
               {direction.waitMinutes}
             </p>
-            <p className="mb-2 text-lg text-fathom">min</p>
+            <p className="mb-1.5 text-base text-fathom">min</p>
           </>
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
         {direction.portStatus && direction.waitMinutes != null ? (
           <StatusPill>{direction.portStatus}</StatusPill>
         ) : null}
       </div>
 
-      <div className="mt-4 border-t border-foam/8 pt-3">
-        <p className="text-[11px] text-fathom">
-          {isStale ? (
-            <span className="inline-flex items-center gap-1 text-caution">
-              <AlertTriangle className="size-3" aria-hidden />
-              Data may be stale · <RelativeTime epochMs={direction.updatedAt} />
-            </span>
-          ) : direction.updatedAt ? (
-            <>
-              Updated <RelativeTime epochMs={direction.updatedAt} />
-            </>
-          ) : (
-            "Source did not report an update time"
-          )}
-        </p>
-        {direction.note ? (
-          <p className="mt-2 text-[11px] leading-relaxed text-caution/80">{direction.note}</p>
-        ) : null}
-        <p className="mt-1.5 text-[11px] text-fathom/70">{direction.sourceName}</p>
-      </div>
-    </Card>
+      <p className="mt-3 text-[11px] text-fathom">
+        {isStale ? (
+          <span className="inline-flex items-center gap-1 text-caution">
+            <AlertTriangle className="size-3" aria-hidden />
+            Data may be stale · <RelativeTime epochMs={direction.updatedAt} />
+          </span>
+        ) : direction.updatedAt ? (
+          <>
+            Updated <RelativeTime epochMs={direction.updatedAt} />
+          </>
+        ) : (
+          "Source did not report an update time"
+        )}
+      </p>
+
+      {direction.note ? (
+        <p className="mt-2 text-[11px] leading-relaxed text-caution/80">{direction.note}</p>
+      ) : null}
+
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-fathom/70 transition-colors hover:text-beacon"
+      >
+        {direction.sourceName}
+        <ExternalLink className="size-2.5" aria-hidden />
+      </a>
+    </div>
   );
 }
 
 /**
- * Getting to the island, and back again.
+ * Customs wait times at the bridge, both directions in one card.
  *
- * Northbound leads because that is the direction you use arriving, and it gets
- * its own card rather than sharing one — the number you want on the drive up
- * should not be half a tile.
+ * This is the booths only. Roadwork and lane closures on the spans themselves
+ * are a different feed and a different card (BridgeSection) — the two fail
+ * independently and conflating them once hid a nightly lane closure behind a
+ * green "minimal wait".
  */
 export function BorderSection({
   section,
@@ -149,13 +144,13 @@ export function BorderSection({
   section: Section<BorderData>;
   settings: Settings;
 }) {
+  const title = "Customs Wait Times";
+  const icon = <Car className="size-3.5" aria-hidden />;
+
   if (section.status === "unavailable") {
     return (
       <Card className="p-5 sm:p-6">
-        <CardHeader
-          title="Getting to the Island"
-          icon={<Car className="size-3.5" aria-hidden />}
-        />
+        <CardHeader title={title} icon={icon} />
         <Unavailable label="Border wait times" detail={section.error} />
       </Card>
     );
@@ -165,34 +160,38 @@ export function BorderSection({
   const northFirst = settings.preferredBorderDirection === "usToCanada";
 
   const north = (
-    <DirectionCard
+    <Direction
       key="north"
       title="Entering Canada"
-      subtitle="Thousand Islands Bridge · U.S. → Canada"
       fromFlag="🇺🇸"
       toFlag="🇨🇦"
-      icon={<Car className="size-3.5" aria-hidden />}
       direction={usToCanada}
       sourceUrl="https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html"
     />
   );
 
   const south = (
-    <DirectionCard
+    <Direction
       key="south"
       title="Returning to the U.S."
-      subtitle="Thousand Islands Bridge · Canada → U.S."
       fromFlag="🇨🇦"
       toFlag="🇺🇸"
-      icon={<Home className="size-3.5" aria-hidden />}
       direction={canadaToUs}
       sourceUrl="https://bwt.cbp.gov/"
     />
   );
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {northFirst ? [north, south] : [south, north]}
-    </div>
+    <Card className="p-5 sm:p-6">
+      <CardHeader
+        title={title}
+        icon={icon}
+        aside={<span className="text-[11px] text-fathom">{section.data.crossing}</span>}
+      />
+
+      <div className="grid gap-6 sm:grid-cols-2 sm:gap-5">
+        {northFirst ? [north, south] : [south, north]}
+      </div>
+    </Card>
   );
 }

@@ -221,6 +221,57 @@ export type BorderData = {
   canadaToUs: BorderDirection | null;
 };
 
+// ── Bridge ───────────────────────────────────────────────────────────────────
+
+/**
+ * A single roadwork / closure / incident affecting the bridge or its approaches.
+ * Shape follows the 511 traveller-information platform that both Ontario 511
+ * and 511NY run, so one type covers both spans.
+ */
+export type BridgeEvent = {
+  id: string;
+  /** Which span this sits on. */
+  span: "canadian" | "american";
+  /** "roadwork", "closures", "accidentsAndIncidents", "specialEvents". */
+  eventType: string;
+  roadwayName: string;
+  description: string;
+  /** e.g. "1 Alternating Lane(s)". Null when the feed didn't say. */
+  lanesAffected: string | null;
+  directionOfTravel: string | null;
+  isFullClosure: boolean;
+  /** "Minor" | "Moderate" | "Major" | "Unknown", verbatim from the feed. */
+  severity: string | null;
+  /** Epoch ms. */
+  startedAt: number | null;
+  updatedAt: number | null;
+  plannedEndAt: number | null;
+};
+
+/**
+ * One span's feed result. `events` is empty when the span is clear; it is the
+ * absence of an `error` that means "we actually reached the feed".
+ */
+export type BridgeSpan = {
+  span: "canadian" | "american";
+  label: string;
+  events: BridgeEvent[];
+  /** Set when this span's feed could not be read. Events will be empty. */
+  error: string | null;
+  /** Set when the feed needs configuration we don't have (e.g. an API key). */
+  needsConfiguration: boolean;
+  sourceName: string;
+  sourceUrl: string;
+  updatedAt: number | null;
+};
+
+export type BridgeData = {
+  crossing: string;
+  spans: BridgeSpan[];
+  /** True only when every span was read successfully and none had events. */
+  allClear: boolean;
+};
+
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
 export type DashboardResponse = {
@@ -238,5 +289,7 @@ export type DashboardResponse = {
   /** Moon and solunar periods — computed, not fetched. */
   astro: AstroData;
   border: Section<BorderData>;
+  /** Roadwork, closures and incidents on the bridge itself. */
+  bridge: Section<BridgeData>;
   fetchedAt: number;
 };

@@ -14,7 +14,8 @@ falling, where the river is sitting, and how long the bridge will take.
 | Barometric pressure | Current reading, 3-hour tendency, 24-hour sparkline |
 | Conditions | Humidity, dew point, chance of rain, cloud cover, visibility |
 | St. Lawrence River | Water level and water temperature, each with its own trend, timestamp and gauge, plus a 24-hour/7-day level chart |
-| Getting to the Island | Thousand Islands Bridge waits, both directions, colour-coded |
+| Customs wait times | Thousand Islands Bridge booth waits, both directions, colour-coded |
+| Bridge status | Roadwork, lane closures and incidents on the two spans |
 | Hourly | Next 24 hours — temperature, precipitation, wind |
 | 7-day forecast | Tap a day for wind, gusts, UV, precipitation totals |
 | 24-hour trends | Interactive chart: temperature, wind, gusts, precipitation, pressure |
@@ -67,7 +68,7 @@ To change the location or pin a river station, copy `.env.example` to
 
 ## Data sources
 
-All three are called from server-side route handlers, never from the browser.
+All of them are called from server-side route handlers, never from the browser.
 
 | | Source | Notes |
 | --- | --- | --- |
@@ -77,6 +78,8 @@ All three are called from server-side route handlers, never from the browser.
 | River temperature | [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/stationhome.html?id=8311062), falling back to [USGS](https://waterservices.usgs.gov/docs/instantaneous-values/) | Station 8311062 (Alexandria Bay); USGS parameter `00010` |
 | U.S. → Canada | [CBSA border wait times](https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html) | Official CSV feed |
 | Canada → U.S. | [U.S. CBP Border Wait Times](https://bwt.cbp.gov/) | Official JSON feed, port 0708 (Alexandria Bay) |
+| Bridge — Canadian span | [Ontario 511](https://511on.ca/) | Open data, no key; Highway 137 |
+| Bridge — American span | [511NY](https://511ny.org/) | Free developer key required (`NY511_API_KEY`); I-81 |
 
 The crossing is **Thousand Islands Bridge — Lansdowne, ON ↔ Alexandria Bay, NY**,
 which is not the same as the other crossings in the area.
@@ -126,12 +129,18 @@ RIVER_STATION_CODE=             # blank = use the nearest CHS gauge
 WATER_TEMP_SOURCES=noaa,usgs    # order to try the temperature sources
 BORDER_CBSA_LOCATION=Thousand Islands Bridge
 BORDER_CBP_PORT_NUMBER=0708
+NY511_API_KEY=                  # blank = American span of the bridge is skipped
 ```
 
-No source needs an API key today. `WEATHER_API_KEY`, `RIVER_API_KEY` and
-`BORDER_API_KEY` are reserved so a keyed provider can be dropped in later
-without touching application logic. They are server-side only — never prefix any
-variable with `NEXT_PUBLIC_`.
+Only one source needs a key, and it is optional: **511NY**, for roadwork on the
+American span of the bridge. Request a free developer key at
+[511ny.org/developers/resources](https://511ny.org/developers/resources) and set
+`NY511_API_KEY`. Leave it blank and everything else still works — the Bridge
+Status card says that span is unconfigured rather than implying it is clear.
+
+`WEATHER_API_KEY`, `RIVER_API_KEY` and `BORDER_API_KEY` are reserved so a keyed
+provider can be dropped in later without touching application logic. Every one
+of these is server-side only — never prefix any variable with `NEXT_PUBLIC_`.
 
 ## How it handles bad data
 
@@ -173,7 +182,7 @@ web/
     page.tsx              # the dashboard
     settings/page.tsx     # units, refresh interval, alert thresholds
     api/dashboard/        # the one route the browser calls
-    api/{weather,river,water-temp,water-quality,border}/  # one source at a time
+    api/{weather,river,water-temp,water-quality,border,bridge}/  # one source at a time
   lib/
     fishing/              # scoring engine — pure, tunable, no React
     astro/moon.ts         # moon phase, rise/set, solunar periods

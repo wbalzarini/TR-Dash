@@ -21,6 +21,7 @@ import { DashboardHeader } from "./DashboardHeader";
 import { DataSourcesFooter } from "./DataSourcesFooter";
 import { IslandHero } from "./IslandHero";
 import { BorderSection } from "./cards/BorderSection";
+import { BridgeSection } from "./cards/BridgeSection";
 import { ConditionsCard } from "./cards/ConditionsCard";
 import { CurrentWeatherCard } from "./cards/CurrentWeatherCard";
 import { ForecastSection } from "./cards/ForecastSection";
@@ -189,6 +190,8 @@ export function Dashboard({ initial }: { initial: DashboardResponse }) {
         />
 
         <BorderSection section={dashboard.border} settings={settings} />
+
+        <BridgeSection section={dashboard.bridge} />
 
         <HourlyStrip section={weather} settings={settings} timezone={timezone} />
 

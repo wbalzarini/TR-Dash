@@ -11,6 +11,7 @@
 import { cached, type CacheResult } from "./cache";
 import { config, STALE_AFTER_MS } from "./config";
 import { fetchBorder } from "./providers/border";
+import { fetchBridge } from "./providers/bridge";
 import { fetchRiver } from "./providers/river";
 import { fetchWaterQuality } from "./providers/water-quality";
 import { fetchWaterTemperature } from "./providers/water-temp";
@@ -19,6 +20,7 @@ import { moonPhase, moonTimes, solunarPeriods } from "./astro/moon";
 import type {
   AstroData,
   BorderData,
+  BridgeData,
   DashboardResponse,
   RiverData,
   Section,
@@ -115,13 +117,35 @@ export async function getBorderSection(): Promise<Section<BorderData>> {
   );
 }
 
+/**
+ * Bridge roadwork and closures.
+ *
+ * Observation time is the newest event stamp, but an old stamp here is normal:
+ * a months-long rehabilitation project legitimately hasn't been "updated"
+ * recently. The staleness window is correspondingly wide.
+ */
+export async function getBridgeSection(): Promise<Section<BridgeData>> {
+  const result = await cached("bridge", config.cacheTtlMs.bridge, fetchBridge);
+  return toSection(
+    result,
+    (data) => {
+      const times = data.spans
+        .map((span) => span.updatedAt)
+        .filter((value): value is number => value != null);
+      return times.length > 0 ? Math.max(...times) : null;
+    },
+    STALE_AFTER_MS.bridge,
+  );
+}
+
 export async function getDashboard(): Promise<DashboardResponse> {
-  const [weather, river, waterTemperature, waterQuality, border] = await Promise.all([
+  const [weather, river, waterTemperature, waterQuality, border, bridge] = await Promise.all([
     getWeatherSection(),
     getRiverSection(),
     getWaterTempSection(),
     getWaterQualitySection(),
     getBorderSection(),
+    getBridgeSection(),
   ]);
 
   const timezone =
@@ -146,6 +170,7 @@ export async function getDashboard(): Promise<DashboardResponse> {
       weather.status === "ok" ? weather.data.sunset : null,
     ),
     border,
+    bridge,
     fetchedAt: Date.now(),
   };
 }
