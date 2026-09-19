@@ -22,6 +22,7 @@
 import { config } from "../config";
 import { parseCsv } from "../csv";
 import { fetchWithTimeout, logFailure } from "../logger";
+import { parseZonedTimestamp } from "../tz";
 import type { BorderData, BorderDirection, BorderStatus } from "../types";
 
 const CBSA_SOURCE_URL = "https://www.cbsa-asfc.gc.ca/bwt-taf/menu-eng.html";
@@ -56,18 +57,29 @@ function parseWaitMinutes(raw: string | number | null | undefined): number | nul
   return Number.isFinite(minutes) ? minutes : null;
 }
 
-/** Date.parse, but null instead of NaN and rejecting obvious nonsense. */
+/**
+ * Parses an update time from either agency.
+ *
+ * Both publish wall-clock time at the crossing with no offset attached, and
+ * `Date.parse` would resolve that against the runtime's timezone. On Vercel
+ * that is UTC, which backdated every reading by four hours and left the card
+ * permanently showing "Data may be stale" — a five-minute-old wait time was
+ * being computed as four hours old.
+ */
 function parseTimestamp(raw: string | null | undefined): number | null {
-  if (!raw || raw.trim() === "") return null;
-  const parsed = Date.parse(raw.trim());
-  if (!Number.isFinite(parsed)) return null;
-  // A timestamp more than a day ahead or a month behind means we misread the
-  // format; better to report no update time than a wrong one.
+  const parsed = parseZonedTimestamp(raw, config.border.timezone);
+  if (parsed == null) return null;
+  // A timestamp far ahead or far behind means we misread the format; better to
+  // report no update time than a wrong one.
   const now = Date.now();
-  if (parsed > now + 24 * 60 * 60 * 1000) return null;
+  if (parsed > now + 2 * 60 * 60 * 1000) return null;
   if (parsed < now - 30 * 24 * 60 * 60 * 1000) return null;
   return parsed;
 }
+
+/** "0708" and "708" are the same port; the feed has used both. */
+const samePort = (a: string, b: string) =>
+  a.trim().replace(/^0+/, "") === b.trim().replace(/^0+/, "");
 
 // ── CBSA: U.S. → Canada ──────────────────────────────────────────────────────
 
@@ -201,8 +213,8 @@ async function fetchCbp(): Promise<BorderDirection> {
 
   if (ports.length === 0) throw new Error("CBP feed contained no ports");
 
-  const atPort = ports.filter(
-    (port) => (port.port_number ?? "").trim() === config.border.cbpPortNumber,
+  const atPort = ports.filter((port) =>
+    samePort(String(port.port_number ?? ""), config.border.cbpPortNumber),
   );
 
   if (atPort.length === 0) {

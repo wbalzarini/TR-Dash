@@ -13,6 +13,8 @@
  * rather than an almanac.
  */
 
+import { tzOffsetMs } from "../tz";
+
 const DEG = Math.PI / 180;
 const J2000 = 2451545.0;
 
@@ -23,35 +25,6 @@ const norm360 = (deg: number) => ((deg % 360) + 360) % 360;
 const toJulian = (epochMs: number) => epochMs / 86_400_000 + 2440587.5;
 
 // ── Timezone helpers ─────────────────────────────────────────────────────────
-
-/** Offset of `timeZone` from UTC at `epochMs`, in ms (positive east). */
-function tzOffsetMs(epochMs: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
-    .formatToParts(epochMs)
-    .reduce<Record<string, string>>((acc, p) => {
-      if (p.type !== "literal") acc[p.type] = p.value;
-      return acc;
-    }, {});
-
-  const asUtc = Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour) % 24,
-    Number(parts.minute),
-    Number(parts.second),
-  );
-  return asUtc - epochMs;
-}
 
 /** Epoch ms of local midnight for the day containing `epochMs`. */
 export function startOfLocalDay(epochMs: number, timeZone: string): number {

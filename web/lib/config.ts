@@ -60,6 +60,8 @@ export type TridentConfig = {
     cbpUrl: string;
     cbpPortNumber: string;
     cbpCrossingName: string | null;
+    /** Timezone the agencies stamp their readings in. */
+    timezone: string;
   };
   cacheTtlMs: {
     weather: number;
@@ -106,6 +108,10 @@ export const config: TridentConfig = {
     cbpUrl: str("BORDER_CBP_URL", "https://bwt.cbp.gov/api/waittimes"),
     cbpPortNumber: str("BORDER_CBP_PORT_NUMBER", "0708"),
     cbpCrossingName: optionalStr("BORDER_CBP_CROSSING_NAME") ?? "Thousand Islands Bridge",
+    timezone:
+      optionalStr("BORDER_TIMEZONE") ??
+      optionalStr("TRIDENT_TIMEZONE") ??
+      "America/New_York",
   },
   cacheTtlMs: {
     weather: num("CACHE_TTL_WEATHER", 600) * 1000,
@@ -128,5 +134,7 @@ export const STALE_AFTER_MS = {
   river: 3 * 60 * 60 * 1000,
   waterTemp: 6 * 60 * 60 * 1000,
   waterQuality: 6 * 60 * 60 * 1000,
-  border: 90 * 60 * 1000,
+  // Both agencies publish about once an hour, so a 90-minute window flipped to
+  // "stale" for part of every cycle. This still catches a feed that has died.
+  border: 150 * 60 * 1000,
 } as const;
